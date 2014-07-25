@@ -1,5 +1,4 @@
-cinci.pm-topic-list
-===================
+## topic-list
 
 Topic idea list for cinci.pm
 
@@ -7,7 +6,7 @@ Topic idea list for cinci.pm
  * Perl awesome success stories
  * Creative implementations  (success stories)
 
-Rondtable "favorite and whys" 
+### Roundtable "favorite and whys" 
  
  * Fav editor and why
  * Fav database and why
