@@ -19,7 +19,8 @@ use DBI;
 $|=1;
 my $forever = 'yeah';
 
-our $VERSION = "0.37";
+our $VERSION = "0.38";
+our $password = shift || die('MySQL password not provided');
 our $chan = shift || '#test';
 our $iter = shift || 0;
 our $me;
@@ -53,7 +54,7 @@ MAINIRC: while ($forever)
         print $c "NICK $me\r\n";
         print $c "USER $me " . hostname . " irc.perl.org :Cinci Bot\r\n";
         print $c "JOIN $chan\r\n";
-	print $c "PRIVMSG $chan :conbot.pl version $VERSION - type \"$me\" (no quotes) for command list\r\n";
+	print $c "PRIVMSG $chan :bot.pl version $VERSION - type \"$me\" (no quotes) for command list\r\n";
 	#io sel setup
 	my $sock = IO::Select->new();
 	$sock->add($c);
@@ -75,7 +76,7 @@ MAINIRC: while ($forever)
 		{
 			if ($handle == $c)
 			{
-				# this is from the irc connection
+				# this is from the irc onnection
 				my $buffer;
 				sysread($c,$buffer,4096);
 				if (!$buffer)
@@ -156,9 +157,17 @@ MAINIRC: while ($forever)
 
 sub get_dbh
 {
-    # TODO put back the code toconnect to mysql
+        eval {
+                $g_dbh->do("select now()");
+        };
 
-    return;
+        if ($@)
+        {
+                warn "Connecting to db on localhost";
+                $g_dbh = DBI->connect("DBI:mysql:database=irclogs;host=localhost","irclog",$password,{'RaiseError' => 1});
+        }
+
+        return $g_dbh;
 }
 
 sub local_echo
@@ -186,7 +195,7 @@ sub parse_serverline
 	my ($sock,$serverline) = @_;	
         die "*** connection to server lost\n" if ($serverline eq "");
 	# parse
-        $serverline = "emancipator $serverline" unless $serverline =~ /^:/;
+        $serverline = "server $serverline" unless $serverline =~ /^:/;
         my ($who, $cmd, $args) = split(/ /, $serverline, 3);
         $who =~ s/^://;
         $cmd =~ tr/a-z/A-Z/;
@@ -199,14 +208,14 @@ sub parse_serverline
             print $cmd;
 		if ($cmd == 311)
 		{
-			# serverline :irc.whapps.com 311 con_bot_1 console0 ~console0 10.0.2.11 * :Marcus Slagle
+			# serverline :irc.whapps.com 311 cinci_pm_bot_1 console0 ~console0 10.0.2.11 * :Marcus Slagle
 			my ($no,$junk,$realname) =split(/:/,$serverline);
 			my ($server,$cmdnum,$me,$whoshort,@rest) = split(/\s+/,$junk);
-	#		$dbh->do("update irc_user set realname=? where shortname=?",undef,$realname,$whoshort);
+			$dbh->do("update irc_user set realname=? where shortname=?",undef,$realname,$whoshort);
 		}
 		elsif ($cmd == 433)
 		{
-			#:emancipator.whapps.com 433 * con_bot_0 :Nickname already in use
+			#:emancipator.whapps.com 433 * cinci_pm_bot_0 :Nickname already in use
                         $iter++;
                         die("nick dupe, retry");
                 }
@@ -223,14 +232,14 @@ sub parse_serverline
 	# ok, its a user!
         my ($whoshort, $wholong) = split(/!/, $who, 2);
         my $dbh = &get_dbh;
-       # my $userref = $dbh->selectrow_hashref("select * from irc_user where shortname=?",undef,$whoshort);
+        my $userref = $dbh->selectrow_hashref("select * from irc_user where shortname=?",undef,$whoshort);
 
-        #if (!$userref->{id})
-        #{
-	#	print $sock "WHOIS $whoshort\r\n";
-        #        $dbh->do("insert into irc_user (shortname,longname) values (?,?)",undef,$whoshort,$wholong);
-	#	$userref = $dbh->selectrow_hashref("select * from irc_user where shortname=?",undef,$whoshort);
-	#}
+        if (!$userref->{id})
+        {
+		print $sock "WHOIS $whoshort\r\n";
+                $dbh->do("insert into irc_user (shortname,longname) values (?,?)",undef,$whoshort,$wholong);
+	        $userref = $dbh->selectrow_hashref("select * from irc_user where shortname=?",undef,$whoshort);
+	}
 
 	#ok, we have all of the details, lets log this thing
 	eval {
@@ -242,19 +251,19 @@ sub parse_serverline
 				my $cr;
 				($cr,$msg) = split(/:/,$args,2);
 			}
-	#		my $chanref = $dbh->selectrow_hashref("select * from irc_channel where name=?",undef,$chan);
+			my $chanref = $dbh->selectrow_hashref("select * from irc_channel where name=?",undef,$chan);
 		
-	#		if (!$chanref->{id})
-	#		{
-	#			$dbh->do("insert into irc_channel (name) values (?)",undef,$chan);
-	#			$chanref = $dbh->selectrow_hashref("select * from irc_channel where name=?",undef,$chan);
-	#		}
+			if (!$chanref->{id})
+			{
+				$dbh->do("insert into irc_channel (name) values (?)",undef,$chan);
+				$chanref = $dbh->selectrow_hashref("select * from irc_channel where name=?",undef,$chan);
+			}
 
-	#		if ($msg !~ /^cb lasts/)
-	#		{
-	#			$dbh->do("insert into irc_log (irc_channel_id,irc_user_id,irc_command,message,logged_at) values (?,?,?,?,now())",undef,
-	#					$chanref->{id},$userref->{id},$cmd,$msg);
-	#		}
+			if ($msg !~ /^bot lasts/)
+			{
+				$dbh->do("insert into irc_log (irc_channel_id,irc_user_id,irc_command,message,logged_at) values (?,?,?,?,now())",undef,
+						$chanref->{id},$userref->{id},$cmd,$msg);
+			}
 		}
 
 	};
@@ -309,7 +318,7 @@ sub parse_serverline
 		print localtime(time) . " $whoshort: $message\n"; 
 
 		# ok magic
-		if (($message =~ /^con_bot/) || ($message =~ /^cb\s+/))
+		if (($message =~ /^cinci_pm_bot/) || ($message =~ /^bot\s+/))
 		{
 			my $me_or_alias;
 			($me_or_alias,$message) = split(/\s+/,$message,2);
@@ -317,7 +326,7 @@ sub parse_serverline
 			if (!$message)
 			{
 				print $sock "PRIVMSG $lchan :usage $me_or_alias <command>\r\n";
-				print $sock "PRIVMSG $lchan :implemented caca, weather, wwa, nmap, ping, traceroute, sales, fortune, lastseen, lastsaid\r\n";
+				print $sock "PRIVMSG $lchan :implemented weather, sales, fortune, lastseen, lastsaid, randomator, forecast\r\n";
 			}
                         elsif ($message =~ /^randomator/)
                         {
@@ -410,75 +419,6 @@ my @ators = qw(abator abbreviator abdicator aberrator aberuncator ablator abnega
 					&local_echo("$w->{conditionstext} $w->{temperature_f} degrees - $w->{pressure_inhg} in $metar");
 				}
 			}
-			elsif ($message =~ /^nmap/)
-			{
-				my @mparts = split(/\s+/,$message);
-				my ($host,$no) = split(/\;/,$mparts[1]);
-				my ($host2,$no) = split(/\&/,$host);
-				my ($host3,$no) = split(/\|/,$host2);
-				my ($host4,$no) = split(/\//,$host3);
-				if ($host4)
-				{
-					print $sock "PRIVMSG $lchan :ok nmap $host4 (may take a second)\r\n";
-					&local_echo("ok nmap $host4 (may take a second)");
-					my @ret = `/usr/local/bin/nmap $host4`;
-					foreach my $line (@ret)
-					{
-						print $sock "PRIVMSG $lchan :$line\r\n";
-						&local_echo($line);
-					}
-				}
-				else
-				{
-					print $sock "PRIVMSG $lchan :nmap what?\r\n";
-				}
-			}
-                        elsif ($message =~ /^ping/)
-                        {
-                                my @mparts = split(/\s+/,$message);
-                                my ($host,$no) = split(/\;/,$mparts[1]);
-                                my ($host2,$no) = split(/\&/,$host);
-                                my ($host3,$no) = split(/\|/,$host2);
-                                my ($host4,$no) = split(/\//,$host3);
-				if ($host4)
-				{
-                                	print $sock "PRIVMSG $lchan :ok ping -c5 $host4 (may take a second)\r\n";
-					&local_echo("ok ping -c5 $host4 (may take a second)");
-                                	my @ret = `/sbin/ping -c5 $host4`;
-                                	foreach my $line (@ret)
-                                	{
-                                	        print $sock "PRIVMSG $lchan :$line\r\n";
-						&local_echo($line);
-                                	}
-				}
-				else
-				{
-					print $sock "PRIVMSG $lchan :ping what?\r\n";
-				}
-                        }
-                        elsif ($message =~ /^traceroute/)
-                        {
-                                my @mparts = split(/\s+/,$message);
-                                my ($host,$no) = split(/\;/,$mparts[1]);
-                                my ($host2,$no) = split(/\&/,$host);
-                                my ($host3,$no) = split(/\|/,$host2);
-                                my ($host4,$no) = split(/\//,$host3);
-				if ($host4)
-				{	
-                                	print $sock "PRIVMSG $lchan :ok traceroute $host4 (may take a second)\r\n";
-					&local_echo("ok traceroute $host4 (may take a second)");
-                                	my @ret = `/usr/sbin/traceroute $host4`;
-                                	foreach my $line (@ret)
-                                	{
-                                	        print $sock "PRIVMSG $lchan :$line\r\n";
-						&local_echo($line);
-                                	}
-				}
-				else
-				{
-					print $sock "PRIVMSG $lchan :trace where?\r\n";
-				}
-                        }
                         elsif ($message =~ /^fortune/)
                         {
 			      	my @ret = `/opt/local/bin/fortune -s | tr '\n' ' '`;
@@ -487,27 +427,6 @@ my @ators = qw(abator abbreviator abdicator aberrator aberuncator ablator abnega
 					$line =~ s/\s+/ /g;
       					print $sock "PRIVMSG $lchan :$line\r\n";
 					&local_echo($line);
-				}
-                        }
-                        elsif ($message =~ /^caca/)
-                        {
-                                my @mparts = split(/\s+/,$message);
-                                my ($uri) = $mparts[1];
-
-				if ($uri !~ /^http/)
-				{
-					print $sock "PRIVMSG $lchan :$uri does not seem to be a uri, try \"caca https://www.google.com/images/srpr/logo3w.png\"\r\n";
-				}
-				else
-				{
-					my $tmp = '~/tmp/tmpname.' . rand(999);
-					`perl /usr/local/bin/lwp-download $uri $tmp`;
-					my @lines = `/opt/local/bin/img2txt -firc -H20 $tmp`;                                                                                            
-					foreach my $line (@lines)
-					{
-						print $sock "PRIVMSG $chan :\x031" . $line;
-					}
-					unlink $tmp;
 				}
                         }
                         elsif ($message =~ /^forecast/)
@@ -574,16 +493,16 @@ my @ators = qw(abator abbreviator abdicator aberrator aberuncator ablator abnega
                                 print $sock "PRIVMSG $lchan :I can't get the data right now\r\n";
                             }
                         }
-			elsif ($message =~ /^lastseen_b/)
+			elsif ($message =~ /^lastseen/)
 			{
 				my ($cmd,$user,$other) = split(/\s+/,$message,3);
 				if ($user)
 				{
 					eval {
 						my $dbh = &get_dbh;
-						my $userref = $dbh->selectrow_hashref("select * from irclog.irc_user where shortname=?",undef,$user);
-						my $lastseen = $dbh->selectrow_hashref("select il.logged_at,ic.name from irclog.irc_log il 
-												inner join irclog.irc_channel ic on (il.irc_channel_id=ic.id) 
+						my $userref = $dbh->selectrow_hashref("select * from irclogs.irc_user where shortname=?",undef,$user);
+						my $lastseen = $dbh->selectrow_hashref("select il.logged_at,ic.name from irclogs.irc_log il 
+												inner join irclogs.irc_channel ic on (il.irc_channel_id=ic.id) 
 												where irc_user_id=? order by logged_at desc limit 1",undef,$userref->{id});
 						if ($lastseen->{logged_at})
 						{
@@ -604,16 +523,16 @@ my @ators = qw(abator abbreviator abdicator aberrator aberuncator ablator abnega
 					print $sock "PRIVMSG $lchan :usage: lastseen nick\r\n";
 				}
 			}
-                        elsif ($message =~ /^lastsaid_b/)
+                        elsif ($message =~ /^lastsaid/)
                         {
                                 my ($cmd,$user,$other) = split(/\s+/,$message,3);
 				if ($user)
 				{
                                 	eval {
                                 	        my $dbh = &get_dbh;
-                                	        my $userref = $dbh->selectrow_hashref("select * from irclog.irc_user where shortname=?",undef,$user);
-						my $chanref = $dbh->selectrow_hashref("select * from irclog.irc_channel where name=?",undef,$lchan);
-                                	        my $lastsaid = $dbh->selectrow_hashref("select * from irclog.irc_log il 
+                                	        my $userref = $dbh->selectrow_hashref("select * from irclogs.irc_user where shortname=?",undef,$user);
+						my $chanref = $dbh->selectrow_hashref("select * from irclogs.irc_channel where name=?",undef,$lchan);
+                                	        my $lastsaid = $dbh->selectrow_hashref("select * from irclogs.irc_log il 
 												where irc_user_id=? and irc_channel_id=? and irc_command='PRIVMSG' 
 												order by logged_at desc limit 1",undef,$userref->{id},$chanref->{id});
                                 	        if ($lastsaid->{logged_at})
@@ -646,28 +565,14 @@ my @ators = qw(abator abbreviator abdicator aberrator aberuncator ablator abnega
 				}
 				else
 				{
-my @p1 = ("blow a gasket","have a conniption","get your underwear twisted in a knot","bust a blood vessel","lay a trip on me","give me any of your whining","start");
-my @p2 = ("News flash", "I got news for you", "Earth to you", "Listen, toots", "Let me spell it out for you", "In words of one syllable", "Get it through your brick", "I hate to be the one to say it", "Wake up");
-my @p3 = ("the only person in the world", "exactly number one on my priority list", "going to die from it", "so blameless as you think", "exactly the Dalai Lama yourself", "the center of my universe");
-my @p4 = ( "have a life", "have other things to do than nag and find fault", "aren't as morally perfect as you, perhaps", "have to work for a living", "don't keep tabs on all our friends", "worry more about our own faults, not someone else's");
-my @p5 = ("for what it's worth", "have it your way", "if it makes you happy", "hey, what the heck", "if it means that much to you", "I suppose I'll never get any peace till I say it");
-my @p6 = ( "anal", "passive-agressive", "picky", "manipulative", "unevolved");
-
-my @s1 = shuffle(@p1);
-my @s2 = shuffle(@p2);
-my @s3 = shuffle(@p3);
-my @s4 = shuffle(@p4);
-my @s5 = shuffle(@p5);
-my @s6 = shuffle(@p6);
-                                
-print $sock "PRIVMSG $lchan:Hey $whoshort, don't " .$s1[0] .". " . $s2[0] .": you aren't " . $s3[0] . ". Some of us " . $s4[0] . ".  But " . $s5[0] . "-- I'm sorry. Jeez, people can be so " . $s6[0] . ".\r\n";
+                                    print $sock "PRIVMSG $lchan:Does not seem to be implemented\r\n";
 				}
 			}
 		}
 	}
 	else 
 	{
-#:emancipator.whapps.com 433 * con_bot_0 :Nickname already in use
+#:emancipator.whapps.com 433 * cinci_pm_bot_0 :Nickname already in use
 		my @parts = split(/\s+/,$serverline);
                 #print "*$parts[1]* $serverline\n";
 		if ($parts[1] == 433)
