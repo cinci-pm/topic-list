@@ -136,7 +136,7 @@ sub get_dbh
     if ($@)
     {
         warn "Connecting to db on localhost";
-        $g_dbh = DBI->connect( "DBI:mysql:database=irclogs;host=localhost", "irclog", $password, { 'RaiseError' => 1 } );
+        $g_dbh = DBI->connect( "DBI:mysql:database=irclogs;host=localhost", "irclogs", $password, { 'RaiseError' => 1 } );
     }
 
     return $g_dbh;
@@ -157,8 +157,9 @@ sub local_echo
         $chanref = $dbh->selectrow_hashref( "select * from irc_channel where name=?", undef, $chan );
     }
 
+    $message =~ s/[^\040-\176]//g;
     $dbh->do( "insert into irc_log (irc_channel_id,irc_user_id,irc_command,message,logged_at) values (?,?,?,?,now())",
-        undef, $chanref->{id}, $userref->{id}, 'PRIVMSG', $message );
+        	undef, $chanref->{id}, $userref->{id}, 'PRIVMSG', $message );
 }
 
 sub parse_serverline
@@ -233,6 +234,7 @@ sub parse_serverline
 
             if ( $msg !~ /^bot lasts/ )
             {
+		$msg =~ s/[^\040-\176]//g;
                 $dbh->do(
                     "insert into irc_log (irc_channel_id,irc_user_id,irc_command,message,logged_at) values (?,?,?,?,now())",
                     undef, $chanref->{id}, $userref->{id}, $cmd, $msg
