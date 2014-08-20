@@ -34,7 +34,7 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
  * IRC bot updates
  * IRC history site updates
 
-### Non-Perl or Slighlty Perl
+### Non-Perl or Slightly Perl
 
  * Homebrewing
  * Perl around the house (home automation, weather stations, etc)
