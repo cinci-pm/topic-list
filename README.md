@@ -21,6 +21,7 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
  * Fav ORM
  * Fav language (that isn't Perl)
  * Web framework workflow VS Command line tool and job workflow (similarities and differences)
+ * Marketing Cincinnati to the Perl Community
 
 ### Web framework comparisons
 
@@ -38,4 +39,5 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
 
  * Homebrewing
  * Perl around the house (home automation, weather stations, etc)
+ * Messin' with Arduino or Raspberry Pi
  
