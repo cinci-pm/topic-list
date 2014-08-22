@@ -8,10 +8,14 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
 
 | Talk Title - Description                                              | Added By                                |
 |-----------------------------------------------------------------------|-----------------------------------------|
-| Rose::DB is Awesome                                                   | [console0](https://github.com/console0) |
 | AWS Services (for those who have never played with them)              | [console0](https://github.com/console0) |
 | My Robot Drummer - Algothrithmic beats with MIDI::Simple              | [ology](https://github.com/ology)       |
 
+### Previous Talks
+
+| Talk Title - Description                                                 | Presented By                            | Date       |
+|--------------------------------------------------------------------------|-----------------------------------------|------------|
+| [Rose::DB Introduction](https://github.com/console0/rose-db-presentation)| [console0](https://github.com/console0) | 2014-08-21 |
 
 ### Roundtable discussions
  
