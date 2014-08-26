@@ -16,6 +16,12 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
 |--------------------------------------------------------------------------|-----------------------------------------|------------|
 | [Rose::DB Introduction](https://github.com/console0/rose-db-presentation)| [console0](https://github.com/console0) | 2014-08-21 |
 
+### Suggested Demo App Comparison
+
+* A ticket/issue system
+* Twitter Clone
+* Cinci.pm site (Blogs, event lists, admin, member pages)
+
 ### Roundtable discussions
  
  * Fav editor and why
