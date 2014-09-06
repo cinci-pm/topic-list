@@ -1,5 +1,12 @@
 ## topic-list
 
+Suggested location for next event:  
+
+Online-Rewards Office, 5th Floor
+441 Vine St, Cincinnati, OH 45202
+
+Looking for +1 -1 on any talks we could have prepped by then...
+
 Topic idea list for cinci.pm: volunteers to speak in [brackets]
 
  * Lightning talks
