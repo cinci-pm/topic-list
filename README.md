@@ -13,9 +13,11 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
  * Perl awesome success stories
  * Creative implementations  (success stories)
 
-| Talk Title - Description                                              | Added By                                |
-|-----------------------------------------------------------------------|-----------------------------------------|
-| AWS Services (for those who have never played with them)              | [console0](https://github.com/console0) |
+| Talk Title - Description                                    | Added By                                |
+|-------------------------------------------------------------|-----------------------------------------|
+| AWS Services (for those who have never played with them)    | [console0](https://github.com/console0) |
+| Perl and Solr/Lucene Indexing and Searching                 | [console0](https://github.com/console0) |
+| The Online Rewards Development Workflow (c5, git, IRC, AWS) | [console0](https://github.com/console0) |
 
 ### Previous Talks
 
