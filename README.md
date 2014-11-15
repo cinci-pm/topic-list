@@ -27,6 +27,7 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
 | Talk Title - Description                                                 | Presented By                            | Date       |
 |--------------------------------------------------------------------------|-----------------------------------------|------------|
 | [Rose::DB Introduction](https://github.com/console0/rose-db-presentation)| [console0](https://github.com/console0) | 2014-08-21 |
+| [Moo The Universe & Everything](http://www.slideshare.net/vanstyn/moo-the-universe-and-everything) | vanstyn |
 
 ### Suggested Demo App Comparison
 
