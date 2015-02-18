@@ -28,7 +28,7 @@ Topic idea list for cinci.pm: volunteers to speak in [brackets]
 |--------------------------------------------------------------------------|-----------------------------------------|------------|
 | [Rose::DB Introduction](https://github.com/console0/rose-db-presentation)| [console0](https://github.com/console0) | 2014-08-21 |
 | [Moo The Universe & Everything](http://www.slideshare.net/vanstyn/moo-the-universe-and-everything) | vanstyn |
-| [RESTful Mojo - A simple Mojo::Lite API](http://ology.net/gene/dev/MojoAPI/) | [ology](https://github.com/ology) |
+| [RESTful Mojo - A simple Mojo::Lite API](http://ology.net/gene/dev/MojoAPI/) | [ology](https://github.com/ology) | 2015-02-11 |
 
 ### Suggested Demo App Comparison
 
